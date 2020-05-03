@@ -11,7 +11,6 @@ func Test_seed_start(t *testing.T) {
 		"node05",
 	}
 	_ = NewRing(hostnames, 10)
-	t.Error("boop")
 }
 
 func NewRing(hostnames []string, vnodes int) *Ring {
