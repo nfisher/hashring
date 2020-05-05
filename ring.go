@@ -9,11 +9,10 @@ import (
 
 // New initialise a consistent hash ring with the specified vnodes per host.
 func New(hostnames []string, vnodes int) *Ring {
-	seeds := make(map[string]uint64)
-	var positions []uint32
 	ring := &Ring{
-		seeds:     seeds,
-		positions: positions,
+		index:     make(map[uint32]string),
+		positions: []uint32{},
+		seeds:     make(map[string]uint64),
 		vnodes:    vnodes,
 	}
 
@@ -21,15 +20,18 @@ func New(hostnames []string, vnodes int) *Ring {
 	for _, h := range hostnames {
 		ring.add(h, hasher)
 	}
+	sort.Slice(ring.positions, func(i, j int) bool { return ring.positions[i] < ring.positions[j] })
 
 	return ring
 }
 
 // Ring is a consistent hash ring with the specified vnodes per host.
 type Ring struct {
-	vnodes    int
-	seeds     map[string]uint64
+	// TODO: benchmark string array vs map
+	index     map[uint32]string
 	positions []uint32
+	seeds     map[string]uint64
+	vnodes    int
 }
 
 func (r *Ring) add(h string, hasher hash.Hash64) {
@@ -39,9 +41,10 @@ func (r *Ring) add(h string, hasher hash.Hash64) {
 	src := rand.NewSource(int64(r.seeds[h]))
 	rint := rand.New(src)
 	for i := 0; i < r.vnodes; i++ {
-		r.positions = append(r.positions, rint.Uint32())
+		pos := rint.Uint32()
+		r.index[pos] = h
+		r.positions = append(r.positions, pos)
 	}
-	sort.Slice(r.positions, func(i, j int) bool { return r.positions[i] < r.positions[j] })
 }
 
 // Add the supplied hostname to the ring.
@@ -59,10 +62,30 @@ func (r *Ring) Remove(h string) {
 		val := rint.Uint32()
 		for i, v := range r.positions {
 			if v == val {
+				delete(r.index, v)
 				r.positions = append(r.positions[:i], r.positions[i+1:]...)
 				break
 			}
 		}
 	}
 	delete(r.seeds, h)
+}
+
+func (r *Ring) Bucket(input string) string {
+	h := fnv.New32a()
+	h.Write([]byte(input))
+	n := r.nearest(h.Sum32())
+	return r.index[n]
+}
+
+func (r *Ring) nearest(sum uint32) uint32 {
+	var n = r.positions[0]
+	for _, v := range r.positions {
+		if v >= sum {
+			n = v
+			break
+		}
+	}
+
+	return n
 }
