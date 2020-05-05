@@ -7,7 +7,7 @@ import (
 
 func Test_init_all_hosts(t *testing.T) {
 	hostnames := []string{"node01", "node02", "node03", "node04", "node05"}
-	ring := NewRing(hostnames, 3)
+	ring := New(hostnames, 3)
 	if len(ring.seeds) != 5 {
 		t.Errorf("got len(ring.seeds)=%v, want 5", len(ring.seeds))
 	}
@@ -51,7 +51,7 @@ func Test_init_all_hosts(t *testing.T) {
 
 func Test_add_host(t *testing.T) {
 	hostnames := []string{"node01", "node02", "node03", "node04"}
-	ring := NewRing(hostnames, 3)
+	ring := New(hostnames, 3)
 	if len(ring.seeds) != 4 {
 		t.Errorf("got len(ring.seeds)=%v, want 4", len(ring.seeds))
 	}
@@ -96,7 +96,7 @@ func Test_add_host(t *testing.T) {
 
 func Test_remove_host(t *testing.T) {
 	hostnames := []string{"node01", "node02", "node03", "node04", "node05"}
-	ring := NewRing(hostnames, 3)
+	ring := New(hostnames, 3)
 	if len(ring.seeds) != 5 {
 		t.Errorf("got len(ring.seeds)=%v, want 5", len(ring.seeds))
 	}
