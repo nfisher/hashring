@@ -4,5 +4,4 @@ go:
 - "1.14"
 
 after_success:
-  - mv coverage.out coverage.txt
   - bash <(curl -s https://codecov.io/bash)
