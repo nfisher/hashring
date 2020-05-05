@@ -27,6 +27,16 @@ func Test_bucket_for(t *testing.T) {
 			}
 		})
 	}
+
+	ring.Remove("node01")
+	for _, tc := range cases {
+		t.Run(tc.name+"-node01", func(t *testing.T) {
+			bucket := ring.Bucket(tc.name)
+			if bucket != tc.bucket && tc.bucket != "node01" {
+				t.Errorf("bucket=%v, want %v", bucket, tc.bucket)
+			}
+		})
+	}
 }
 
 func Test_nearest_for(t *testing.T) {
