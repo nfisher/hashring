@@ -71,6 +71,7 @@ func (r *Ring) Remove(h string) {
 	delete(r.seeds, h)
 }
 
+// Bucket indicates which hostname the input is routed to.
 func (r *Ring) Bucket(input string) string {
 	h := fnv.New32a()
 	h.Write([]byte(input))
