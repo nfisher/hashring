@@ -1,9 +1,37 @@
 package hashring
 
 import (
+	"crypto/rand"
+	"fmt"
 	"reflect"
 	"testing"
 )
+
+func Test_bucket_for_with_remove(t *testing.T) {
+	oldRing := New([]string{"node01", "node02", "node03", "node04", "node05"}, 64)
+	oldRing.Remove("node03")
+	oldRing.Add("node06")
+
+	newRing := New([]string{"node01", "node02", "node04", "node05", "node06"}, 64)
+
+	for i := 0; i < 15_000; i++ {
+		uid := genUID()
+		old := oldRing.Bucket(uid)
+		n := newRing.Bucket(uid)
+		if old != n {
+			t.Fatalf("uid=%v, old=%v, new=%v", uid, old, n)
+		}
+	}
+}
+
+func genUID() string {
+	b := make([]byte, 8)
+	_, err := rand.Read(b)
+	if err != nil {
+		panic(err)
+	}
+	return fmt.Sprintf("%x", b)
+}
 
 func Test_bucket_for(t *testing.T) {
 	t.Parallel()
@@ -37,6 +65,37 @@ func Test_bucket_for(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Benchmark_nearest_for(b *testing.B) {
+	cases := []struct {
+		name   string
+		bucket string
+	}{
+		{"default/pinger", "node1"},
+		{"instana/instana-agent", "node1"},
+		{"kube-system/metrics-server", "node17"},
+		{"instana-agent/daemon", "node4"},
+	}
+
+	var hostnames []string
+	for i := 0; i < 24; i++ {
+		hostnames = append(hostnames, fmt.Sprintf("node%v", i))
+	}
+
+	ring := New(hostnames, 64)
+
+	for _, tc := range cases {
+		b.Run(tc.name, func(b *testing.B) {
+			for i := 0; i < b.N; i++ {
+				bucket := ring.Bucket(tc.name)
+				if bucket != tc.bucket {
+					b.Errorf("bucket=%v, want %v", bucket, tc.bucket)
+				}
+			}
+		})
+	}
+
 }
 
 func Test_nearest_for(t *testing.T) {

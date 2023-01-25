@@ -80,13 +80,10 @@ func (r *Ring) Bucket(input string) string {
 }
 
 func (r *Ring) nearest(sum uint32) uint32 {
-	var n = r.positions[0]
-	for _, v := range r.positions {
-		if v >= sum {
-			n = v
-			break
-		}
+	n := sort.Search(len(r.positions), func(i int) bool { return r.positions[i] >= sum })
+	if n >= len(r.positions) {
+		n = 0
 	}
 
-	return n
+	return r.positions[n]
 }
